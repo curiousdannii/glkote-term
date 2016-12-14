@@ -1,0 +1,42 @@
+root: true
+
+extends: 'eslint:recommended'
+
+parserOptions:
+  ecmaVersion: 6
+
+env:
+  node: true
+
+rules:
+  brace-style:
+    - error
+    - allman
+  comma-dangle:
+    - error
+    - always-multiline
+  curly:
+    - error
+  eqeqeq:
+    - error
+    - always
+    -
+      null: ignore
+  indent:
+    - error
+    - tab
+    -
+      SwitchCase: 1
+  linebreak-style:
+    - error
+    - unix
+  no-var:
+    - error
+  prefer-const:
+    - error
+  quotes:
+    - error
+    - single
+  semi:
+    - error
+    - never

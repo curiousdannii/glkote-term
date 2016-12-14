@@ -38,6 +38,8 @@
    and will also double the write-count in a stream.
 */
 
+/* eslint-disable */
+
 /* Put everything inside the Glk namespace. */
 
 Glk = function() {
@@ -45,9 +47,8 @@ Glk = function() {
 /* The VM interface object. */
 var VM = null;
 
-/* References to GlkOte and GiDispa */
+/* Reference to GlkOte */
 var GlkOte = null;
-var GiDispa = null;
 
 /* Environment capabilities. (Checked at init time.) */
 var has_canvas;
@@ -84,7 +85,7 @@ var current_partial_outputs = null;
 */
 function init(vm_options) {
     /* Check for canvas support. We don't rely on jquery here. */
-    has_canvas = (document.createElement('canvas').getContext != undefined);
+    has_canvas = 0;//(document.createElement('canvas').getContext != undefined);
 
     if (vm_options.GlkOte) {
         GlkOte = vm_options.GlkOte;
@@ -95,22 +96,15 @@ function init(vm_options) {
     else if (typeof global !== 'undefined' && global.GlkOte) {
         GlkOte = global.GlkOte;
     }
+    else if (typeof require !== 'undefined') {
+        GlkOte = new (require('./glkote-term.js'))();
+    }
     else {
         throw new Error('No reference to GlkOte');
     }
 
-    if (vm_options.GiDispa) {
-        GiDispa = vm_options.GiDispa;
-    }
-    else if (typeof window !== 'undefined' && window.GiDispa) {
-        GiDispa = window.GiDispa;
-    }
-    else if (typeof global !== 'undefined' && global.GiDispa) {
-        GiDispa = global.GiDispa;
-    }
-
     VM = vm_options.vm;
-    if (GiDispa)
+    if (typeof GiDispa !== 'undefined')
         GiDispa.set_vm(VM);
 
     vm_options.accept = accept_ui_event;
@@ -218,7 +212,7 @@ function handle_arrange_input() {
     gli_selectref.set_field(2, 0);
     gli_selectref.set_field(3, 0);
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(gli_selectref);
     gli_selectref = null;
     VM.resume();
@@ -233,7 +227,7 @@ function handle_redraw_input() {
     gli_selectref.set_field(2, 0);
     gli_selectref.set_field(3, 0);
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(gli_selectref);
     gli_selectref = null;
     VM.resume();
@@ -255,7 +249,7 @@ function handle_external_input(res) {
     gli_selectref.set_field(2, val1);
     gli_selectref.set_field(3, val2);
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(gli_selectref);
     gli_selectref = null;
     VM.resume();
@@ -280,7 +274,7 @@ function handle_hyperlink_input(disprock, val) {
 
     win.hyperlink_request = false;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(gli_selectref);
     gli_selectref = null;
     VM.resume();
@@ -305,7 +299,7 @@ function handle_mouse_input(disprock, xpos, ypos) {
 
     win.mouse_request = false;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(gli_selectref);
     gli_selectref = null;
     VM.resume();
@@ -345,7 +339,7 @@ function handle_char_input(disprock, input) {
     win.char_request_uni = false;
     win.input_generation = null;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(gli_selectref);
     gli_selectref = null;
     VM.resume();
@@ -392,7 +386,7 @@ function handle_line_input(disprock, input, termkey) {
     gli_selectref.set_field(2, input.length);
     gli_selectref.set_field(3, termcode);
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.unretain_array(win.linebuf);
     win.line_request = false;
     win.line_request_uni = false;
@@ -400,7 +394,7 @@ function handle_line_input(disprock, input, termkey) {
     win.input_generation = null;
     win.linebuf = null;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(gli_selectref);
     gli_selectref = null;
     VM.resume();
@@ -2640,9 +2634,9 @@ function UniArrayToBE32(arr) {
    up in Safari, in Opera, and in Firefox if you have Firebug installed.)
 */
 function qlog(msg) {
-    if (window.console && console.log)
+    if (typeof window !== 'undefined' && window.console && console.log)
         console.log(msg);
-    else if (window.opera && opera.postError)
+    else if (typeof window !== 'undefined' && window.opera && opera.postError)
         opera.postError(msg);
 }
 
@@ -2773,7 +2767,7 @@ function gli_new_window(type, rock) {
     if (win.next)
         win.next.prev = win;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.class_register('window', win);
     else
         win.disprock = gli_api_display_rocks++;
@@ -2787,7 +2781,7 @@ function gli_new_window(type, rock) {
 function gli_delete_window(win) {
     var prev, next;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.class_unregister('window', win);
     geometry_changed = true;
 
@@ -3007,7 +3001,7 @@ function gli_window_close(win, recurse) {
         }
     }
 
-    if (window.GiDispa && win.linebuf) {
+    if (typeof window !== 'undefined' && window.GiDispa && win.linebuf) {
         GiDispa.unretain_array(win.linebuf);
         win.linebuf = null;
     }
@@ -3241,7 +3235,7 @@ function gli_new_stream(type, readable, writable, rock) {
     if (str.next)
         str.next.prev = str;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.class_register('stream', str);
 
     return str;
@@ -3257,7 +3251,7 @@ function gli_delete_stream(str) {
     gli_windows_unechostream(str);
 
     if (str.type == strtype_Memory) {
-        if (window.GiDispa)
+        if (typeof window !== 'undefined' && window.GiDispa)
             GiDispa.unretain_array(str.buf);
     }
     else if (str.type == strtype_File) {
@@ -3267,7 +3261,7 @@ function gli_delete_stream(str) {
         }
     }
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.class_unregister('stream', str);
 
     prev = str.prev;
@@ -3365,7 +3359,7 @@ function gli_new_fileref(filename, usage, rock, ref) {
     if (fref.next)
         fref.next.prev = fref;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.class_register('fileref', fref);
 
     return fref;
@@ -3374,7 +3368,7 @@ function gli_new_fileref(filename, usage, rock, ref) {
 function gli_delete_fileref(fref) {
     var prev, next;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.class_unregister('fileref', fref);
 
     prev = fref.prev;
@@ -4045,6 +4039,7 @@ function glk_exit() {
     gli_selectref = null;
     if (option_exit_warning)
         GlkOte.warning(option_exit_warning);
+    GlkOte.update({ type: 'exit' });
     return DidNotReturn;
 }
 
@@ -4753,7 +4748,7 @@ function glk_stream_open_memory(buf, fmode, rock) {
             str.bufeof = 0;
         else
             str.bufeof = str.buflen;
-        if (window.GiDispa)
+        if (typeof window !== 'undefined' && window.GiDispa)
             GiDispa.retain_array(buf);
     }
 
@@ -4763,7 +4758,7 @@ function glk_stream_open_memory(buf, fmode, rock) {
 function glk_stream_open_resource(filenum, rock) {
     var str;
 
-    if (!window.GiLoad || !GiLoad.find_data_chunk)
+    if (typeof window !== 'undefined' && (!window.GiLoad || !GiLoad.find_data_chunk))
         return null;
     var el = GiLoad.find_data_chunk(filenum);
     if (!el)
@@ -4802,7 +4797,7 @@ function glk_stream_open_resource(filenum, rock) {
 function glk_stream_open_resource_uni(filenum, rock) {
     var str;
 
-    if (!window.GiLoad || !GiLoad.find_data_chunk)
+    if (typeof window !== 'undefined' && (!window.GiLoad || !GiLoad.find_data_chunk))
         return null;
     var el = GiLoad.find_data_chunk(filenum);
     if (!el)
@@ -4991,7 +4986,7 @@ function gli_fileref_create_by_prompt_callback(obj) {
     ui_specialinput = null;
     ui_specialcallback = null;
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.prepare_resume(fref);
     VM.resume();
 }
@@ -5181,7 +5176,7 @@ function glk_request_line_event(win, buf, initlen) {
             win.request_echo_line_input = true;
         win.input_generation = event_generation;
         win.linebuf = buf;
-        if (window.GiDispa)
+        if (typeof window !== 'undefined' && window.GiDispa)
             GiDispa.retain_array(buf);
     }
     else {
@@ -5237,7 +5232,7 @@ function glk_cancel_line_event(win, eventref) {
         eventref.set_field(3, 0);
     }
 
-    if (window.GiDispa)
+    if (typeof window !== 'undefined' && window.GiDispa)
         GiDispa.unretain_array(win.linebuf);
     win.line_request = false;
     win.line_request_uni = false;
@@ -5339,7 +5334,7 @@ function glk_request_timer_events(msec) {
 /* Graphics functions. */
 
 function glk_image_get_info(imgid, widthref, heightref) {
-    if (!window.GiLoad || !GiLoad.get_image_info)
+    if (typeof window !== 'undefined' && (!window.GiLoad || !GiLoad.get_image_info))
         return null;
 
     var info = GiLoad.get_image_info(imgid);
@@ -5361,7 +5356,7 @@ function glk_image_draw(win, imgid, val1, val2) {
     if (!win)
         throw('glk_image_draw: invalid window');
 
-    if (!window.GiLoad || !GiLoad.get_image_info)
+    if (typeof window !== 'undefined' && (!window.GiLoad || !GiLoad.get_image_info))
         return 0;
     var info = GiLoad.get_image_info(imgid);
     if (!info)
@@ -5411,7 +5406,7 @@ function glk_image_draw_scaled(win, imgid, val1, val2, width, height) {
     if (!win)
         throw('glk_image_draw_scaled: invalid window');
 
-    if (!window.GiLoad || !GiLoad.get_image_info)
+    if (typeof window !== 'undefined' && (!window.GiLoad || !GiLoad.get_image_info))
         return 0;
     var info = GiLoad.get_image_info(imgid);
     if (!info)
@@ -6016,7 +6011,7 @@ function glk_stream_open_memory_uni(buf, fmode, rock) {
             str.bufeof = 0;
         else
             str.bufeof = str.buflen;
-        if (window.GiDispa)
+        if (typeof window !== 'undefined' && window.GiDispa)
             GiDispa.retain_array(buf);
     }
 
@@ -6064,7 +6059,7 @@ function glk_request_line_event_uni(win, buf, initlen) {
             win.request_echo_line_input = true;
         win.input_generation = event_generation;
         win.linebuf = buf;
-        if (window.GiDispa)
+        if (typeof window !== 'undefined' && window.GiDispa)
             GiDispa.retain_array(buf);
     }
     else {
@@ -6211,7 +6206,7 @@ function glk_date_to_simple_time_local(dateref, factor) {
 
 /* End of Glk namespace function. Return the object which will
    become the Glk global. */
-return {
+var api = {
     version: '2.2.2', /* GlkOte/GlkApi version */
     init : init,
     update : update,
@@ -6353,6 +6348,13 @@ return {
     glk_stream_open_resource : glk_stream_open_resource,
     glk_stream_open_resource_uni : glk_stream_open_resource_uni
 };
+
+if ( module )
+{
+	module.exports = api;
+}
+
+return api;
 
 }();
 

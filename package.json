@@ -1,0 +1,23 @@
+{
+  "name": "glkote-term",
+  "version": "0.1.0",
+  "description": "Javascript terminal implementation of GlkOte",
+  "author": "Dannii Willis <curiousdannii@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "intfiction"
+  ],
+  "main": "src/index.js",
+  "repository": "curiousdannii/glkote-term.git",
+  "bugs": "https://github.com/curiousdannii/glkote-term/issues",
+  "homepage": "https://github.com/curiousdannii/glkote-term",
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.8.1"
+  },
+  "scripts": {
+    "lint": "eslint ."
+  }
+}
