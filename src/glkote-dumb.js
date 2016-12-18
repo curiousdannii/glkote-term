@@ -11,11 +11,20 @@ https://github.com/curiousdannii/glkote-term
 
 'use strict'
 
+const ansiEscapes = require( 'ansi-escapes' )
+const MuteStream = require( 'mute-stream' )
 const readline = require( 'readline' )
 
 const GlkOte = require( './glkote-term.js' )
 
-const stdout = process.stdout
+const key_replacements = {
+	'\x7F': 'delete',
+	'\t': 'tab',
+}
+
+const stdin = process.stdin
+const stdout = new MuteStream()
+stdout.pipe( process.stdout )
 
 class DumbGlkOte extends GlkOte
 {
@@ -43,20 +52,39 @@ class DumbGlkOte extends GlkOte
 		
 		this.window = null
 		this.current_input_type = null
-		
+
+		// Prepare to receive input events
+		if ( stdin.isTTY )
+		{
+			stdin.setRawMode( true )
+		}
+		readline.emitKeypressEvents( stdin )
 		this.input = readline.createInterface({
-			input: process.stdin,
+			input: stdin,
 			output: stdout,
 			prompt: '',
 		})
-		this.input.pause()
-		this.input.on( 'line', input =>
-		{
-			this.send_response( 'line', this.window, input )
-		})
+		this.input.resume()
 
-		// Note that this will result in VM.init() being called
+		// Event callbacks
+		this.handle_char_input_callback = ( str, key ) => this.handle_char_input( str, key )
+		this.handle_line_input_callback = ( line ) => this.handle_line_input( line )
+
+		// Note that this must be called last as it will result in VM.init() being called
 		super.init( iface )
+	}
+
+	attach_handlers()
+	{
+		if ( this.current_input_type === 'char' )
+		{
+			stdout.mute()
+			stdin.on( 'keypress', this.handle_char_input_callback )
+		}
+		if ( this.current_input_type === 'line' )
+		{
+			this.input.on( 'line', this.handle_line_input_callback )
+		}
 	}
 
 	cancel_inputs( data )
@@ -64,8 +92,15 @@ class DumbGlkOte extends GlkOte
 		if ( data.length === 0 )
 		{
 			this.current_input_type = null
-			this.input.pause()
+			this.detach_handlers()
 		}
+	}
+
+	detach_handlers()
+	{
+		stdin.removeListener( 'keypress', this.handle_char_input_callback )
+		this.input.removeListener( 'line', this.handle_line_input_callback )
+		stdout.unmute()
 	}
 
 	disable( disable )
@@ -73,20 +108,52 @@ class DumbGlkOte extends GlkOte
 		this.disabled = disable
 		if ( disable )
 		{
-			this.input.pause()
+			this.detach_handlers()
 		}
-		else if ( this.current_input_type === 'line' )
+		else
 		{
-			this.input.resume()
+			this.attach_handlers()
 		}
 	}
 
 	exit()
 	{
 		this.input.close()
+		stdout.write( '\n' )
 		super.exit()
 	}
+	
+	handle_char_input( str, key )
+	{
+		if ( this.current_input_type === 'char' )
+		{
+			this.current_input_type = null
+			this.detach_handlers()
 
+			// Make sure this char isn't being remembered for the next line input
+			this.input._line_buffer = null
+			this.input.line = ''
+
+			// Process special keys
+			const res = key_replacements[str] || str || key.name.replace( /f(\d+)/, 'func$1' )
+			this.send_response( 'char', this.window, res )
+		}
+	}
+	
+	handle_line_input( line)
+	{
+		if ( this.current_input_type === 'line' )
+		{
+			if ( stdout.isTTY )
+			{
+				stdout.write( ansiEscapes.scrollDown + ansiEscapes.cursorRestorePosition + ansiEscapes.eraseEndLine )
+			}
+			this.current_input_type = null
+			this.detach_handlers()
+			this.send_response( 'line', this.window, line )
+		}
+	}
+	
 	update_content( data )
 	{
 		data[0][ this.window.type === 'buffer' ? 'text' : 'lines' ].forEach( line =>
@@ -116,14 +183,20 @@ class DumbGlkOte extends GlkOte
 
 	update_inputs( data )
 	{
+		if ( data[0].type === 'char' )
+		{
+			this.current_input_type = 'char'
+		}
+
 		if ( data[0].type === 'line' )
 		{
-			if ( this.current_input_type == null )
+			if ( stdout.isTTY )
 			{
-				this.current_input_type = 'line'
-				this.input.resume()
+				stdout.write( ansiEscapes.cursorSavePosition )
 			}
+			this.current_input_type = 'line'
 		}
+		this.attach_handlers()
 	}
 
 	update_windows( data )

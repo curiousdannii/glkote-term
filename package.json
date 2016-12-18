@@ -15,11 +15,13 @@
     "node": ">=6.0.0"
   },
   "devDependencies": {
+    "ansi-escapes": "^1.4.0",
     "eslint": "^3.12.1",
-    "ifvms": "^0.2.0"
+    "ifvms": "^0.2.0",
+    "mute-stream": "0.0.6"
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "make"
+    "test": "make test"
   }
 }

@@ -174,6 +174,11 @@ class GlkOte
 			res.support = this.support()
 		}
 
+		if ( type === 'char' )
+		{
+			res.value = val
+		}
+
 		if ( type === 'line' )
 		{
 			res.value = val
