@@ -19,7 +19,7 @@ class GlkOte
 		this.disabled = false
 		this.generation = 0
 		this.interface = null
-		this.version = '0.1.0'
+		this.version = require( '../package.json' ).version
 	}
 
 	getinterface()
