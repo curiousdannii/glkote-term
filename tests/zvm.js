@@ -13,6 +13,7 @@ const Glk = GlkOte.Glk
 
 const options = {
 	vm: vm,
+	Dialog: new GlkOte.Dialog(),
 	Glk: Glk,
 	GlkOte: new GlkOte(),
 }

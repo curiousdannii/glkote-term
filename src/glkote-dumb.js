@@ -13,8 +13,10 @@ https://github.com/curiousdannii/glkote-term
 
 const ansiEscapes = require( 'ansi-escapes' )
 const MuteStream = require( 'mute-stream' )
+const os = require( 'os' )
 const readline = require( 'readline' )
 
+const Dialog = require( './electrofs.js' )
 const GlkOte = require( './glkote-term.js' )
 
 const key_replacements = {
@@ -25,6 +27,13 @@ const key_replacements = {
 const stdin = process.stdin
 const stdout = new MuteStream()
 stdout.pipe( process.stdout )
+
+// Create this now so that both DumbGlkOte and DumbDialog can access it, even though it may not be used
+const rl = readline.createInterface({
+	input: stdin,
+	output: stdout,
+	prompt: '',
+})
 
 class DumbGlkOte extends GlkOte
 {
@@ -59,12 +68,7 @@ class DumbGlkOte extends GlkOte
 			stdin.setRawMode( true )
 		}
 		readline.emitKeypressEvents( stdin )
-		this.input = readline.createInterface({
-			input: stdin,
-			output: stdout,
-			prompt: '',
-		})
-		this.input.resume()
+		rl.resume()
 
 		// Event callbacks
 		this.handle_char_input_callback = ( str, key ) => this.handle_char_input( str, key )
@@ -72,6 +76,29 @@ class DumbGlkOte extends GlkOte
 
 		// Note that this must be called last as it will result in VM.init() being called
 		super.init( iface )
+	}
+
+	accept_specialinput( data )
+	{
+		if ( data.type === 'fileref_prompt' )
+		{
+			const replyfunc = ( ref ) => this.send_response( 'specialresponse', null, 'fileref_prompt', ref )
+			try
+			{
+				( new DumbDialog() ).open( data.filemode !== 'read', data.filetype, data.gameid, replyfunc )
+			}
+			catch (ex)
+			{
+				this.log( 'Unable to open file dialog: ' + ex )
+				/* Return a failure. But we don't want to call send_response before
+				glkote_update has finished, so we defer the reply slightly. */
+				setImmediate( () => replyfunc( null ) )
+			}
+		}
+		else
+		{
+			this.error( 'Request for unknown special input type: ' + data.type )
+		}
 	}
 
 	attach_handlers()
@@ -83,7 +110,7 @@ class DumbGlkOte extends GlkOte
 		}
 		if ( this.current_input_type === 'line' )
 		{
-			this.input.on( 'line', this.handle_line_input_callback )
+			rl.on( 'line', this.handle_line_input_callback )
 		}
 	}
 
@@ -99,7 +126,7 @@ class DumbGlkOte extends GlkOte
 	detach_handlers()
 	{
 		stdin.removeListener( 'keypress', this.handle_char_input_callback )
-		this.input.removeListener( 'line', this.handle_line_input_callback )
+		rl.removeListener( 'line', this.handle_line_input_callback )
 		stdout.unmute()
 	}
 
@@ -118,7 +145,7 @@ class DumbGlkOte extends GlkOte
 
 	exit()
 	{
-		this.input.close()
+		rl.close()
 		stdout.write( '\n' )
 		super.exit()
 	}
@@ -131,8 +158,8 @@ class DumbGlkOte extends GlkOte
 			this.detach_handlers()
 
 			// Make sure this char isn't being remembered for the next line input
-			this.input._line_buffer = null
-			this.input.line = ''
+			rl._line_buffer = null
+			rl.line = ''
 
 			// Process special keys
 			const res = key_replacements[str] || str || key.name.replace( /f(\d+)/, 'func$1' )
@@ -183,20 +210,23 @@ class DumbGlkOte extends GlkOte
 
 	update_inputs( data )
 	{
-		if ( data[0].type === 'char' )
+		if ( data.length )
 		{
-			this.current_input_type = 'char'
-		}
-
-		if ( data[0].type === 'line' )
-		{
-			if ( stdout.isTTY )
+			if ( data[0].type === 'char' )
 			{
-				stdout.write( ansiEscapes.cursorSavePosition )
+				this.current_input_type = 'char'
 			}
-			this.current_input_type = 'line'
+
+			if ( data[0].type === 'line' )
+			{
+				if ( stdout.isTTY )
+				{
+					stdout.write( ansiEscapes.cursorSavePosition )
+				}
+				this.current_input_type = 'line'
+			}
+			this.attach_handlers()
 		}
-		this.attach_handlers()
 	}
 
 	update_windows( data )
@@ -205,4 +235,34 @@ class DumbGlkOte extends GlkOte
 	}
 }
 
+class DumbDialog extends Dialog.Dialog
+{
+	get_user_path()
+	{
+		return os.homedir()
+	}
+
+	log()
+	{}
+
+	open( tosave, usage, gameid, callback )
+	{
+		rl.question( 'Please enter a file name (without an extension): ', ( path ) =>
+		{
+			if ( !path )
+			{
+				callback( null )
+			}
+			else
+			{
+				callback({
+					filename: path + '.' +  this.filters_for_usage( usage )[0].extensions[0],
+					usage: usage,
+				})
+			}
+		})
+	}
+}
+
 module.exports = DumbGlkOte
+module.exports.Dialog = DumbDialog

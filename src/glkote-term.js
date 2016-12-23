@@ -91,13 +91,18 @@ class GlkOte
 		{
 			this.update_windows( data.windows )
 		}
-		if ( data.content != null )
+		if ( data.content != null && data.content.length )
 		{
 			this.update_content( data.content )
 		}
 		if ( data.input != null )
 		{
 			this.update_inputs( data.input )
+		}
+
+		if ( data.specialinput != null )
+		{
+			this.accept_specialinput( data.specialinput )
 		}
 
 		// Disable everything if requested
@@ -152,7 +157,7 @@ class GlkOte
 		return metrics
 	}
 
-	send_response( type, win, val /*, val2*/ )
+	send_response( type, win, val, val2 )
 	{
 		const res = {
 			type: type,
@@ -182,6 +187,12 @@ class GlkOte
 		if ( type === 'line' )
 		{
 			res.value = val
+		}
+
+		if ( type === 'specialresponse' )
+		{
+			res.response = val
+			res.value = val2
 		}
 
 		this.interface.accept( res )
