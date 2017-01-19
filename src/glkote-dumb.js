@@ -145,6 +145,7 @@ class DumbGlkOte extends GlkOte
 
 	exit()
 	{
+		this.detach_handlers()
 		rl.close()
 		stdout.write( '\n' )
 		super.exit()
@@ -247,6 +248,7 @@ class DumbDialog extends Dialog.Dialog
 
 	open( tosave, usage, gameid, callback )
 	{
+		stdout.write( '\n' )
 		rl.question( 'Please enter a file name (without an extension): ', ( path ) =>
 		{
 			if ( !path )

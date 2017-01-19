@@ -431,8 +431,8 @@ function handle_line_input(disprock, input, termkey) {
     VM.resume();
 }
 
-function update() {
-    var dataobj = { type: 'update', gen: event_generation };
+function update(type) {
+    var dataobj = { type: type || 'update', gen: event_generation };
     var winarray = null;
     var contentarray = null;
     var inputarray = null;
@@ -1197,9 +1197,6 @@ var Const = {
     evtype_SoundNotify : 7,
     evtype_Hyperlink : 8,
     evtype_VolumeNotify : 9,
-
-    /* A fake event for fileref_create_by_prompt */
-    evtype_FilerefPromp : -1,
 
     style_Normal : 0,
     style_Emphasized : 1,
@@ -4057,7 +4054,7 @@ function glk_exit() {
     gli_selectref = null;
     if (option_exit_warning)
         GlkOte.warning(option_exit_warning);
-    GlkOte.update({ type: 'exit' });
+    update('exit');
     return DidNotReturn;
 }
 
@@ -5002,17 +4999,9 @@ function gli_fileref_create_by_prompt_callback(obj) {
     ui_specialinput = null;
     ui_specialcallback = null;
 
-    /* If glk_select() was called after glk_fileref_create_by_prompt() then
-       return fref via the RefStruct rather than through SetResumeStore() */
-    if (gli_selectref) {
-        gli_selectref.set_field(0, Const.evtype_FilerefPromp);
-        gli_selectref.set_field(1, fref);
-        gli_selectref = null;
-    }
-
     if (GiDispa)
         GiDispa.prepare_resume(fref);
-    VM.resume();
+    VM.resume(fref);
 }
 
 function glk_fileref_destroy(fref) {

@@ -55,12 +55,7 @@ class GlkOte
 		{
 			return
 		}
-		if ( data.type === 'exit' )
-		{
-			this.exit()
-			return
-		}
-		if ( data.type !== 'update' )
+		if ( data.type !== 'update' && data.type !== 'exit' )
 		{
 			this.log( `Ignoring unknown message type: ${ data.type }` )
 			return
@@ -100,16 +95,22 @@ class GlkOte
 			this.update_inputs( data.input )
 		}
 
-		if ( data.specialinput != null )
-		{
-			this.accept_specialinput( data.specialinput )
-		}
-
 		// Disable everything if requested
 		this.disabled = false
 		if ( data.disabled || data.specialinput )
 		{
 			this.disable( true )
+		}
+
+		if ( data.specialinput != null )
+		{
+			this.accept_specialinput( data.specialinput )
+		}
+
+		// Detach all handlers and exit
+		if ( data.type === 'exit' )
+		{
+			this.exit()
 		}
 	}
 
