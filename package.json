@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "eslint": "^3.12.1",
-    "ifvms": "^0.2.0"
+    "ifvms": "^1.0.0"
   },
   "scripts": {
     "lint": "eslint .",
