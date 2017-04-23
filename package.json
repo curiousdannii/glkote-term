@@ -15,7 +15,7 @@
     "node": ">=6.0.0"
   },
   "dependencies": {
-    "ansi-escapes": "^1.4.0",
+    "ansi-escapes": "^2.0.0",
     "mute-stream": "0.0.7"
   },
   "devDependencies": {
