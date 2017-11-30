@@ -70,7 +70,61 @@ var event_generation = 0;
 var current_partial_inputs = null;
 var current_partial_outputs = null;
 
-/* Initialize the library, initialize the VM, and set it running. (It will 
+// Set external variable references
+function set_references( vm_options )
+{
+    if ( vm_options.Dialog )
+    {
+        Dialog = vm_options.Dialog;
+    }
+    if ( !Dialog )
+    {
+        if ( typeof window !== 'undefined' && window.Dialog )
+        {
+            Dialog = window.Dialog;
+        }
+        else
+        {
+            throw new Error( 'No reference to Dialog' );
+        }
+    }
+
+    if ( vm_options.GiDispa )
+    {
+        GiDispa = vm_options.GiDispa;
+    }
+    else if ( !GiDispa && typeof window !== 'undefined' && window.GiDispa )
+    {
+        GiDispa = window.GiDispa;
+    }
+
+    if ( vm_options.GiLoad )
+    {
+        GiLoad = vm_options.GiLoad;
+    }
+    else if ( !GiLoad && typeof window !== 'undefined' && window.GiLoad )
+    {
+        GiLoad = window.GiLoad;
+    }
+
+    if ( vm_options.GlkOte )
+    {
+        GlkOte = vm_options.GlkOte;
+    }
+    if ( !GlkOte )
+    {
+        if ( typeof window !== 'undefined' && window.GlkOte )
+        {
+            GlkOte = window.GlkOte;
+        }
+        else
+        {
+            throw new Error('No reference to GlkOte');
+        }
+    }
+}
+
+/* Initialize the library, initialize the VM, and set it running. (It will
    run until the first glk_select() or glk_exit() call.)
 
    The vm_options argument must have a vm_options.vm field, which must be an
@@ -86,39 +140,7 @@ var current_partial_outputs = null;
 */
 function init(vm_options) {
     /* Set references to external libraries */
-    if (vm_options.Dialog) {
-        Dialog = vm_options.Dialog;
-    }
-    else if (typeof window !== 'undefined' && window.Dialog) {
-        Dialog = window.Dialog;
-    }
-    else {
-        throw new Error('No reference to Dialog');
-    }
-
-    if (vm_options.GiDispa) {
-        GiDispa = vm_options.GiDispa;
-    }
-    else if (typeof window !== 'undefined' && window.GiDispa) {
-        GiDispa = window.GiDispa;
-    }
-
-    if (vm_options.GiLoad) {
-        GiLoad = vm_options.GiLoad;
-    }
-    else if (typeof window !== 'undefined' && window.GiLoad) {
-        GiLoad = window.GiLoad;
-    }
-
-    if (vm_options.GlkOte) {
-        GlkOte = vm_options.GlkOte;
-    }
-    else if (typeof window !== 'undefined' && window.GlkOte) {
-        GlkOte = window.GlkOte;
-    }
-    else {
-        throw new Error('No reference to GlkOte');
-    }
+    set_references( vm_options );
 
     VM = vm_options.vm;
     if (GiDispa)
@@ -6214,6 +6236,7 @@ function glk_date_to_simple_time_local(dateref, factor) {
    become the Glk global. */
 var api = {
     version: '2.2.3', /* GlkOte/GlkApi version */
+    set_references: set_references,
     init : init,
     update : update,
     save_allstate : save_allstate,
