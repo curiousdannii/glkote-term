@@ -4704,7 +4704,7 @@ function glk_stream_open_file(fref, fmode, rock) {
         throw('glk_stream_open_file: illegal filemode');
 
     if (fmode == Const.filemode_Read && !Dialog.file_ref_exists(fref.ref))
-        throw('glk_stream_open_file: file not found for reading: ' + fref.ref.filename);
+        return null;
 
     if (!Dialog.streaming) {
         var content = null;
@@ -5016,6 +5016,13 @@ function gli_fileref_create_by_prompt_callback(obj) {
     var fref = null;
     if (ref) {
         fref = gli_new_fileref(ref.filename, usage, rock, ref);
+    }
+
+    // If reading a file which doesn't exist, return null
+    if ( ui_specialinput.filemode === 'read' && !Dialog.file_ref_exists( fref.ref ) )
+    {
+        glk_fileref_destroy( fref );
+        fref = null;
     }
 
     ui_specialinput = null;
@@ -5960,7 +5967,7 @@ function glk_stream_open_file_uni(fref, fmode, rock) {
         throw('glk_stream_open_file_uni: illegal filemode');
 
     if (fmode == Const.filemode_Read && !Dialog.file_ref_exists(fref.ref))
-        throw('glk_stream_open_file_uni: file not found for reading: ' + fref.ref.filename);
+        return null;
 
     if (!Dialog.streaming) {
         var content = null;
