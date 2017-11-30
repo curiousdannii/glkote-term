@@ -1,11 +1,12 @@
 {
   "name": "glkote-term",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Javascript terminal implementation of GlkOte",
   "author": "Dannii Willis <curiousdannii@gmail.com>",
   "license": "MIT",
   "keywords": [
-    "intfiction"
+    "interactive fiction",
+    "interactive-fiction"
   ],
   "main": "src/index.js",
   "repository": "curiousdannii/glkote-term.git",
