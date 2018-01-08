@@ -30,6 +30,8 @@ rules:
   linebreak-style:
     - error
     - unix
+  no-console:
+    - off
   no-var:
     - error
   prefer-const:

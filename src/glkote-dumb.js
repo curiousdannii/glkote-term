@@ -12,7 +12,6 @@ https://github.com/curiousdannii/glkote-term
 'use strict'
 
 const ansiEscapes = require( 'ansi-escapes' )
-const MuteStream = require( 'mute-stream' )
 const os = require( 'os' )
 const readline = require( 'readline' )
 
@@ -24,19 +23,18 @@ const key_replacements = {
 	'\t': 'tab',
 }
 
-const stdin = process.stdin
-const stdout = new MuteStream()
-stdout.pipe( process.stdout )
-
-// Create this now so that both DumbGlkOte and DumbDialog can access it, even though it may not be used
-const rl = readline.createInterface({
-	input: stdin,
-	output: stdout,
-	prompt: '',
-})
-
 class DumbGlkOte extends GlkOte
 {
+	constructor( options )
+	{
+		super()
+
+		this.rl = options.rl
+		this.showlog = options.showlog
+		this.stdin = options.stdin
+		this.stdout = options.stdout
+	}
+
 	init( iface )
 	{
 		if ( !iface )
@@ -63,12 +61,12 @@ class DumbGlkOte extends GlkOte
 		this.current_input_type = null
 
 		// Prepare to receive input events
-		if ( stdin.isTTY )
+		if ( this.stdin.isTTY )
 		{
-			stdin.setRawMode( true )
+			this.stdin.setRawMode( true )
 		}
-		readline.emitKeypressEvents( stdin )
-		rl.resume()
+		readline.emitKeypressEvents( this.stdin )
+		this.rl.resume()
 
 		// Event callbacks
 		this.handle_char_input_callback = ( str, key ) => this.handle_char_input( str, key )
@@ -85,7 +83,7 @@ class DumbGlkOte extends GlkOte
 			const replyfunc = ( ref ) => this.send_response( 'specialresponse', null, 'fileref_prompt', ref )
 			try
 			{
-				( new DumbDialog() ).open( data.filemode !== 'read', data.filetype, data.gameid, replyfunc )
+				( this.interface.Dialog || new DumbDialog() ).open( data.filemode !== 'read', data.filetype, data.gameid, replyfunc )
 			}
 			catch (ex)
 			{
@@ -105,12 +103,12 @@ class DumbGlkOte extends GlkOte
 	{
 		if ( this.current_input_type === 'char' )
 		{
-			stdout.mute()
-			stdin.on( 'keypress', this.handle_char_input_callback )
+			this.stdout.mute()
+			this.stdin.on( 'keypress', this.handle_char_input_callback )
 		}
 		if ( this.current_input_type === 'line' )
 		{
-			rl.on( 'line', this.handle_line_input_callback )
+			this.rl.on( 'line', this.handle_line_input_callback )
 		}
 	}
 
@@ -125,9 +123,9 @@ class DumbGlkOte extends GlkOte
 
 	detach_handlers()
 	{
-		stdin.removeListener( 'keypress', this.handle_char_input_callback )
-		rl.removeListener( 'line', this.handle_line_input_callback )
-		stdout.unmute()
+		this.stdin.removeListener( 'keypress', this.handle_char_input_callback )
+		this.rl.removeListener( 'line', this.handle_line_input_callback )
+		this.stdout.unmute()
 	}
 
 	disable( disable )
@@ -146,8 +144,8 @@ class DumbGlkOte extends GlkOte
 	exit()
 	{
 		this.detach_handlers()
-		rl.close()
-		stdout.write( '\n' )
+		this.rl.close()
+		this.stdout.write( '\n' )
 		super.exit()
 	}
 	
@@ -159,8 +157,8 @@ class DumbGlkOte extends GlkOte
 			this.detach_handlers()
 
 			// Make sure this char isn't being remembered for the next line input
-			rl._line_buffer = null
-			rl.line = ''
+			this.rl._line_buffer = null
+			this.rl.line = ''
 
 			// Process special keys
 			const res = key_replacements[str] || str || key.name.replace( /f(\d+)/, 'func$1' )
@@ -172,13 +170,21 @@ class DumbGlkOte extends GlkOte
 	{
 		if ( this.current_input_type === 'line' )
 		{
-			if ( stdout.isTTY )
+			if ( this.stdout.isTTY )
 			{
-				stdout.write( ansiEscapes.scrollDown + ansiEscapes.cursorRestorePosition + ansiEscapes.eraseEndLine )
+				this.stdout.write( ansiEscapes.scrollDown + ansiEscapes.cursorRestorePosition + ansiEscapes.eraseEndLine )
 			}
 			this.current_input_type = null
 			this.detach_handlers()
 			this.send_response( 'line', this.window, line )
+		}
+	}
+
+	log( msg )
+	{
+		if ( this.showlog )
+		{
+			console.log( `ℹ️ ${ msg }` )
 		}
 	}
 	
@@ -188,7 +194,7 @@ class DumbGlkOte extends GlkOte
 		{
 			if ( !line.append )
 			{
-				stdout.write( '\n' )
+				this.stdout.write( '\n' )
 			}
 			const content = line.content
 			if ( content )
@@ -198,11 +204,11 @@ class DumbGlkOte extends GlkOte
 					if ( typeof content[i] === 'string' )
 					{
 						i++
-						stdout.write( content[i] )
+						this.stdout.write( content[i] )
 					}
 					else
 					{
-						stdout.write( content[i].text )
+						this.stdout.write( content[i].text )
 					}
 				}
 			}
@@ -220,9 +226,9 @@ class DumbGlkOte extends GlkOte
 
 			if ( data[0].type === 'line' )
 			{
-				if ( stdout.isTTY )
+				if ( this.stdout.isTTY )
 				{
-					stdout.write( ansiEscapes.cursorSavePosition )
+					this.stdout.write( ansiEscapes.cursorSavePosition )
 				}
 				this.current_input_type = 'line'
 			}
@@ -234,10 +240,27 @@ class DumbGlkOte extends GlkOte
 	{
 		this.window = data[0]
 	}
+
+	warning( msg )
+	{
+		if ( this.showlog )
+		{
+			console.warn( `⚠️ ${ msg }` )
+		}
+	}
 }
 
 class DumbDialog extends Dialog.Dialog
 {
+	constructor( options )
+	{
+		super()
+
+		this.rl = options.rl
+		this.stdin = options.stdin
+		this.stdout = options.stdout
+	}
+
 	get_user_path()
 	{
 		return os.homedir()
@@ -248,8 +271,8 @@ class DumbDialog extends Dialog.Dialog
 
 	open( tosave, usage, gameid, callback )
 	{
-		stdout.write( '\n' )
-		rl.question( 'Please enter a file name (without an extension): ', ( path ) =>
+		this.stdout.write( '\n' )
+		this.rl.question( 'Please enter a file name (without an extension): ', ( path ) =>
 		{
 			if ( !path )
 			{

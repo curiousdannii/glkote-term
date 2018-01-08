@@ -16,12 +16,12 @@
     "node": ">=6.0.0"
   },
   "dependencies": {
-    "ansi-escapes": "^3.0.0",
-    "mute-stream": "0.0.7"
+    "ansi-escapes": "^3.0.0"
   },
   "devDependencies": {
     "eslint": "^4.1.0",
-    "ifvms": "^1.0.0"
+    "ifvms": "^1.0.0",
+    "mute-stream": "0.0.7"
   },
   "scripts": {
     "lint": "eslint .",
