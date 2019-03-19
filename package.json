@@ -16,7 +16,7 @@
     "node": ">=6.0.0"
   },
   "dependencies": {
-    "ansi-escapes": "^3.0.0"
+    "ansi-escapes": "^4.0.0"
   },
   "devDependencies": {
     "eslint": "^5.0.0",
