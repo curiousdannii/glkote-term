@@ -190,7 +190,8 @@ class DumbGlkOte extends GlkOte
 	
 	update_content( data )
 	{
-		data[0][ this.window.type === 'buffer' ? 'text' : 'lines' ].forEach( line =>
+		data = data.filter(content => content.id === this.window.id)[0]
+		data.text.forEach( line =>
 		{
 			if ( !line.append )
 			{
@@ -238,7 +239,13 @@ class DumbGlkOte extends GlkOte
 
 	update_windows( data )
 	{
-		this.window = data[0]
+		data.forEach(win =>
+		{
+			if (win.type === 'buffer')
+			{
+				this.window = win
+			}
+		})
 	}
 
 	warning( msg )
