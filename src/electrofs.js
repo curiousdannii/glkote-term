@@ -2,7 +2,7 @@
  * Designed by Andrew Plotkin <erkyrath@eblong.com>
  * <http://eblong.com/zarf/glk/glkote.html>
  * 
- * This Javascript library is copyright 2016 by Andrew Plotkin.
+ * This Javascript library is copyright 2016-20 by Andrew Plotkin.
  * It is distributed under the MIT license; see the "LICENSE" file.
  *
  * This is a (mostly-) drop-in replacement for dialog.js for node and the
@@ -56,7 +56,7 @@ function FStream(fmode, filename)
     this.mark = 0; /* read-write position in the file (or buffer start pos) */
 
     /* We buffer input or output (but never both at the same time). */
-    this.buffer = new buffer_mod.Buffer(BUFFER_SIZE);
+    this.buffer = buffer_mod.Buffer.alloc(BUFFER_SIZE);
     /* bufuse is filemode_Read or filemode_Write, if the buffer is being used
        for reading or writing. For writing, the buffer starts at mark and
        covers buflen bytes. For reading, the buffer starts at mark amd runs
@@ -339,7 +339,7 @@ class Dialog {
         fs.writeFileSync(pathj, str, { encoding:'utf8' });
 
         if (ram) {
-            var buf = new buffer_mod.Buffer(ram);
+            var buf = buffer_mod.Buffer.from(ram);
             fs.writeFileSync(pathr, buf);
         }
     }
@@ -599,8 +599,9 @@ class ElectronDialog extends Dialog {
         var mainwin = require('electron').remote.getCurrentWindow();
         if (!tosave) {
             opts.properties = ['openFile'];
-            dialog.showOpenDialog(mainwin, opts, function(ls) {
-                    if (!ls || !ls.length) {
+            dialog.showOpenDialog(mainwin, opts).then(function(res) {
+                var ls = res.filePaths;
+                if (res.canceled || !ls || !ls.length) {
                         callback(null);
                     }
                     else {
@@ -610,12 +611,12 @@ class ElectronDialog extends Dialog {
                 });
         }
         else {
-            dialog.showSaveDialog(mainwin, opts, function(path) {
-                    if (!path) {
+            dialog.showSaveDialog(mainwin, opts).then(function(res) {
+                if (res.canceled || !res.filePath) {
                         callback(null);
                     }
                     else {
-                        var ref = { filename:path, usage:usage };
+                        var ref = { filename:res.filePath, usage:usage };
                         callback(ref);
                     }
                 });
