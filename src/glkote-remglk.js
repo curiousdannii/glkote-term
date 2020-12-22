@@ -40,7 +40,6 @@ class RemGlkOte
         this.interface = null
         this.version = require('../package.json').version
 
-        this.rl = options.rl
         this.showlog = options.showlog
         this.stdin = options.stdin
         this.stdout = options.stdout
@@ -69,9 +68,10 @@ class RemGlkOte
         {
             this.stdin.setRawMode(true)
         }
-        this.rl.on('line', line =>
+
+        this.stdin.on('data', chunk =>
         {
-            buffer += line
+            buffer += chunk.toString().trim()
             if (buffer.endsWith('}'))
             {
                 try
