@@ -13,7 +13,7 @@
   "bugs": "https://github.com/curiousdannii/glkote-term/issues",
   "homepage": "https://github.com/curiousdannii/glkote-term",
   "dependencies": {
-    "ansi-escapes": "^4.0.0"
+    "ansi-escapes": "^5.0.0"
   },
   "devDependencies": {
     "eslint": "^7.12.1",
